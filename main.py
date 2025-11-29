@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 import os
+from sqlalchemy.engine import URL
 
 from sqlalchemy import (
     create_engine, Column, Integer, String, DateTime, Boolean,
@@ -13,18 +14,24 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 
 # ----------------- Config Banco -----------------
 
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_NAME = os.getenv("DB_NAME", "icevgrfh_icevision")
-DB_USER = os.getenv("DB_USER", "icevgrfh_iceuser")
-DB_PASS = os.getenv("DB_PASS", "IceVision@2025")
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
 
-DATABASE_URL = (
-    f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
-    "?charset=utf8mb4"
+# Monta a URL de forma segura, sem quebrar quando a senha tem @, !, etc.
+db_url = URL.create(
+    drivername="mysql+pymysql",
+    username=DB_USER,
+    password=DB_PASS,
+    host=DB_HOST,
+    port=3306,
+    database=DB_NAME,
 )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+engine = create_engine(db_url, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
 
 def get_db() -> Session:
